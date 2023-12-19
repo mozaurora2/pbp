@@ -1,0 +1,92 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-5">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title">List Ruangan</h1>
+                <table class="table" id="ruangan_table">
+                    <!-- Table data will be inserted here -->
+                </table>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#exampleModal">Tambah Ruangan</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal -->
+    <div class="modal fade" id="exampleModal" tabindex="-1" aria-labelledby="exampleModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h1 class="modal-title fs-5" id="exampleModalLabel">Tambahkan Ruangan</h1>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="form" onsubmit="return false;">
+						{% csrf_token %}
+						{{ form.nomor.label_tag }} {{ form.nomor }}<br>
+						{{ form.ketersediaan.label_tag }} {{ form.ketersediaan }}<br>
+					</form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="button_add" data-bs-dismiss="modal">Add Product</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function getProducts() {
+            return fetch("{% url 'sistem_manajemen:get_ruangan_json' %}").then((res) => res.json())
+        }
+        const baseUrl = "{% url 'sistem_manajemen:edit_ketersediaan' 0 %}";
+        async function refreshProducts() {
+            const table = document.getElementById("ruangan_table");
+            table.innerHTML = "";
+            const products = await getProducts();
+            let htmlString = `<thead>
+                <tr>
+                    <th>Nomor</th>
+                    <th>Ketersediaan</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>`;
+
+            products.forEach((item) => {
+                htmlString += `<tr>
+                    <td>${item.fields.nomor}</td>
+                    <td>${item.fields.ketersediaan}</td>
+                    <td>
+						<a href="${baseUrl.replace('0', item.pk)}">
+							<button class="btn btn-primary">
+								Rubah Status
+							</button>
+						</a>
+					</td>
+                </tr>`;
+            });
+
+            htmlString += `</tbody>`;
+            table.innerHTML = htmlString;
+        }
+
+        refreshProducts();
+		
+        function addProduct() {
+			const form = document.querySelector('#form');
+			const formData = new FormData(form);
+            fetch("{% url 'sistem_manajemen:add_ruangan_ajax' %}", {
+                method: "POST",
+                body: formData
+            }).then(refreshProducts)
+
+            document.getElementById("form").reset();
+            return false;
+        }
+
+        document.getElementById("button_add").onclick = addProduct;
+        
+    </script>
+{% endblock content %}
